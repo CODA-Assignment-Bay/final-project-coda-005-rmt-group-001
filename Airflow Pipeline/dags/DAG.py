@@ -7,6 +7,7 @@ from airflow.operators.python_operator import PythonOperator
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col
 from pyspark.sql.types import StringType
+import pandas as pd
 
 import sys
 import os
@@ -26,14 +27,14 @@ default_args = {
     'retry_delay': dt.timedelta(minutes=600),
 }
 
-spark = SparkSession.builder \
-    .appName("Soil-Polution-Datawarehouse-Pipeline") \
-    .config("spark.jars.packages", "org.mongodb.spark:mongo-spark-connector_2.12:3.0.1") \
-    .getOrCreate()
+# spark = SparkSession.builder \
+#     .appName("Air-Polution-Datawarehouse-Pipeline") \
+#     .getOrCreate()
 
 extract_parquet_path = "/opt/airflow/dags/temp/extracted"
 transform_parquet_path = "/opt/airflow/dags/temp/transformed"
 
+temp_csv_path = '/opt/airflow/dags/temp/'
 
 
 with DAG('P2FP',
@@ -43,28 +44,33 @@ with DAG('P2FP',
          ) as dag:
     
     def extract_part():
-        df = extract_data('/opt/airflow/dags/soil_pollution_diseases.csv', spark)
-        #simpan dalam parquet (tempat menaruh file sementara), setiap kali akan di overwrite agar tidak menumpuk
-        df.write.parquet(extract_parquet_path, mode="overwrite")
-    
+        measurement_item_df = extract_data('/opt/airflow/dags/measurement_item_info.csv')
+        measurement_info_df = extract_data('/opt/airflow/dags/measurement_info.csv')
+        measurement_station_df = extract_data('/opt/airflow/dags/measurement_station_info.csv')
+
+        measurement_item_df.to_csv(temp_csv_path+'extract_measurement_item.csv',index=False)
+        measurement_info_df.to_csv(temp_csv_path+'extract_measurement_info.csv',index=False)
+        measurement_station_df.to_csv(temp_csv_path+'extract_measurement_station.csv',index=False)
+        
+       
     def transform_part():
-        df = spark.read.parquet(extract_parquet_path)
-        df_transformed = transform_data(df, spark)
-        table_name_list = []
-        for key in df_transformed:
-            df_transformed[key].write.parquet(transform_parquet_path+key,mode="overwrite")
+        measurement_info_df = pd.read_csv(temp_csv_path+'extract_measurement_info.csv')
 
-        #df_transformed.write.parquet(transform_parquet_path, mode="overwrite") 
-    
+        measurement_info_df, dim_date = transform_data(measurement_info_df)
+
+        measurement_info_df.to_csv(temp_csv_path+'transform_measurement_info.csv',index=False)
+        dim_date.to_csv(temp_csv_path+'dim_date.csv',index=False)
+
+
+
     def load_part():
-        table_list = ['Pollutant', 'Soil', 'Farm', 'Disease', 'Case']
-        for table in table_list:
-            df = spark.read.parquet(transform_parquet_path+table)
-            load_data(df,table)    
+        measurement_info_df = pd.read_csv(temp_csv_path+'transform_measurement_info.csv')
+        measurement_item_df = pd.read_csv(temp_csv_path+'extract_measurement_item.csv')
+        measurement_station_df = pd.read_csv(temp_csv_path+'extract_measurement_station.csv')
+        dim_date = pd.read_csv(temp_csv_path+'dim_date.csv')
 
-        # for table in table_name_list:
-        #     df = spark.read.parquet(transform_parquet_path+table)
-        #     load_data(df,table)
+        #load_data(measurement_station_df, measurement_item_df, measurement_info_df, dim_date, measurement_recap_df)
+        load_data(measurement_station_df, measurement_item_df, measurement_info_df, dim_date)
 
     extract = PythonOperator(
         task_id='extract',

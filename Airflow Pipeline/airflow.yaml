@@ -23,7 +23,7 @@ x-depends-on:
 services:
   postgres:
     image: postgres:13
-    container_name: postgres_soil-polution
+    container_name: postgres_Air-polution
     ports:
       - "5434:5432"
     healthcheck:
@@ -36,7 +36,7 @@ services:
   scheduler:
     <<: [*common, *depends-on]
     # <<: *depends-on
-    container_name: airflow-scheduler-soil-polution
+    container_name: airflow-scheduler-Air-polution
     command: scheduler
     restart: on-failure
     ports:
@@ -46,7 +46,7 @@ services:
     <<: [*common, *depends-on]
     # <<: *common
     # <<: *depends-on
-    container_name: airflow-webserver-soil-polution
+    container_name: airflow-webserver-Air-polution
     restart: always
     command: webserver
     ports:
@@ -59,7 +59,7 @@ services:
   
   airflow-init:
     <<: *common
-    container_name: airflow-init-soil-polution
+    container_name: airflow-init-Air-polution
     entrypoint: /bin/bash
     command:
       - -c

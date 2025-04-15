@@ -1,7 +1,9 @@
-from pyspark.sql import SparkSession
-from pymongo import MongoClient
+import os
+import psycopg2
+from sqlalchemy import create_engine
+from dotenv import load_dotenv
 
-def load_data(df, collection_name):
+def load_data(station_df, item_df, info_df, date_df):
     '''
     Fungsi ini ditujukan untuk melakukan load data ke MongoDB
 
@@ -9,22 +11,32 @@ def load_data(df, collection_name):
         df: dataframe -  tabel yang berisikan semua data
     
     '''
-    mongodb_uri="mongodb+srv://admin:admin@doni-playground.cv49f.mongodb.net"
-    database_name = "Soil-Polution"
-    client = MongoClient(mongodb_uri)
-    db = client[database_name]
-    collection = db[collection_name]
 
-    #mengkonversi table menjadi list of dictionary yang dapat diterima mongodb
-    data = []
-    rows = df.collect()
-    for row in rows:
-        row_dict = row.asDict()
-        data.append(row_dict)
+    load_dotenv()
 
-    print("data length", len(data))
-    #data tidak kosong
-    if data:
-        collection.insert_many(data)
-    else:
-        print("data kosong")
+
+    engine = create_engine(os.getenv('DATABASE_URL'))
+    load_data_to_db(station_df, "Dim_Station",engine)
+    load_data_to_db(item_df, "Dim_Item",engine)
+    #load_data_to_db(info_df, "Fact_Info",engine)
+    load_data_to_db(date_df, "Dim_Date",engine)
+
+
+   
+
+
+    
+
+
+def get_data_from_db(query, engine):
+    try:
+        df = pd.read_sql(query, engine)
+        return df
+    except Exception as e:
+        print(e)
+
+def load_data_to_db(df, table_name, engine):
+    try:
+        df.to_sql(table_name, engine, if_exists="append", index=False)
+    except Exception as e:
+        print(e)

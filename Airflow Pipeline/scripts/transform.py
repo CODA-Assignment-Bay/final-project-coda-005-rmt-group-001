@@ -1,209 +1,167 @@
-from pyspark.sql.functions import to_timestamp, col, when
+import pandas as pd
 
 
-def transform_data(df ,spark):
+def transform_data(measurement_info_df):
     '''
-    Fungsi ini ditujukan untuk mengambil csv dari local directory untuk selanjutnya di load ke Pyspark
+    Fungsi ini ditujukan untuk melakukan transformasi pada 3 tabel
 
     Parameters:
-        df        : data yang telah diekstrak
-        spark       : spark session
+        measurement_info        : data yang telah diekstrak dari tabel measurement_info
+
 
     Return:
-        data        : pandas dataframe (csv) diload ke pyspark dataframe
+        measurement_info_df        : tabel measurement_info yang telah ditransformasi 
+        measurement_recap_df       : tabel measurement_recap yang telah ditransformasi 
+        dim_date                   : tabel dim_date yang telah ditransformasi 
 
     '''
-    df = drop_column(df, "Region")
-    df = convert_yes_no_to_boolean(df, ["Case_Resolved","Follow_Up_Required"])
-    df = drop_missing_string_date(df)
-    df = filter_none(df)
-    df = convert_datetime(df, ["Date_Reported"], "yyyy-MM-dd")
     
+    #transformasi pada tabel measurement_info
+    measurement_info_df['Measurement_Date'] = pd.to_datetime(measurement_info_df['Measurement_Date']) #, format='%d%b%Y:%H:%M:%S.%f')
+    measurement_info_df = measurement_info_df.drop("Instrument_Status", axis='columns')
+
     
-    #Membuat tabel Pollutant
-    pollutant = df.select("Case_ID",
-                      "Pollutant_Type",
-                      "Pollutant_Concentration_mg_kg")
-    pollutant = create_custom_id(pollutant, "Pollutant","Pol-","Case_ID", spark)
-    
-    #membuat tabel Soil
-    soil = df.select("Case_ID",
-                 "Soil_pH",
-                 "Temperature_C",
-                 "Humidity_%",
-                 "Rainfall_mm",
-                 "Soil_Texture", 
-                 "Soil_Organic_Matter_%")
-    
-    soil  = create_custom_id(soil, "Soil","Soil-","Case_ID", spark)
+    #creating dim date table
+    date_range = pd.date_range(start='1/1/2017', end='1/1/2099', freq='H')
+    dim_date = pd.DataFrame({'Timetable':date_range})
+    dim_date['Year'] = dim_date.Timetable.dt.year
+    dim_date['Month'] = dim_date.Timetable.dt.month
+    dim_date['Day'] = dim_date.Timetable.dt.day
+    dim_date['DayOfWeek'] = dim_date.Timetable.dt.dayofweek
+    dim_date['WeekOfYear'] = dim_date.Timetable.dt.isocalendar().week
+    dim_date['Hour'] = dim_date.Timetable.dt.hour
+    dim_date['Quarter'] = dim_date.Timetable.dt.quarter
+    dim_date['Half'] = dim_date.Timetable.dt.month.apply(lambda m: 1 if m<=6 else 2)
+
+    return measurement_info_df, dim_date#, measurement_recap_df
 
 
-    #membuat tabel Farm
-    farm = df.select("Case_ID",
-                 "Crop_Type",
-                 "Farming_Practice",
-                 "Water_Source_Type")
-    
-    farm  = create_custom_id(farm, "Farm","Farm-","Case_ID", spark)
-    
-    #membuat tabel disease
-    disease = df.select("Case_ID",
-                    "Nearby_Industry",
-                    "Disease_Type",
-                    "Disease_Severity",
-                    "Health_Symptoms",
-                    "Age_Group_Affected", 
-                    "Gender_Most_Affected")
-    disease  = create_custom_id(disease, "Disease","Disease-","Case_ID",spark)
-    
-
-    #membuat tabel case
-    case = df.select("Case_ID",
-                 "Date_Reported",
-                 "Country",
-                 "Mitigation_Measure",
-                 "Case_Resolved", 
-                 "Follow_Up_Required")
-    
-    #melakukan join ke tabel case sehingga menjadi fact table
-    case = case.alias("c").join(
-    pollutant.alias("p"), col("c.Case_ID") == col("p.Case_ID"), "inner"
-    ).join(
-        soil.alias("s"), col("c.Case_ID") == col("s.Case_ID"), "inner"
-    ).join(
-        farm.alias("f"), col("c.Case_ID") == col("f.Case_ID"), "inner"
-    ).join(
-        disease.alias("d"), col("c.Case_ID") == col("d.Case_ID"), "inner"
-    ).select(
-        col("c.Case_ID"), col("c.Date_Reported"), col("c.Country"), 
-        col("p.Pollutant_ID"),
-        col("s.Soil_ID"),
-        col("f.Farm_ID"),
-        col("d.Disease_ID"),
-        col("c.Mitigation_Measure"), col("c.Case_Resolved"), col("c.Follow_Up_Required"), 
-    )
-    
-    #membuat koleksi data yang akan menjadi datawarehouse
-    datawarehouse_set = {}
-    datawarehouse_set["Pollutant"] = pollutant
-    datawarehouse_set["Soil"] = soil
-    datawarehouse_set["Farm"] = farm
-    datawarehouse_set["Disease"] = disease
-    datawarehouse_set["Case"] = case
-
-    return datawarehouse_set
-
-def create_custom_id(dataframe, dataframe_name, id_code, reference_coulumn_name, spark):
-    dataframe.createOrReplaceTempView(dataframe_name+"_view")
-    dataframe = spark.sql(
-        f"select concat('{id_code}',row_number() over (order by '{reference_coulumn_name}')) as {dataframe_name}_ID,*  from {dataframe_name}_view"
-        )
-    return dataframe
-
-def drop_column(df, column_name):
+def transform_measurement_info(df):
     '''
-    Fungsi ini ditujukan untuk membuang kolom yang tidak akan digunakan di data warehouse
-
-    Parameters:
-        df           : nama dataframe yang telah diload ke pyspark
-        column_name  : nama kolom yang akan di-drop
-
-    Return:
-        df           : dataframe dengan tanpa kolom yang telah di drop
-
-    Contoh penggunaan:
-        df = drop_column(df,"Ticket_id")
-        kolom "Ticket_id" akan di-drop dari dataset bernama df
+    Fungsi ini ditujukan untuk melaku
     '''
-    df = df.drop(column_name)
-    return df
+    pass
 
-def filter_none(df):
-    """
-    Fungsi ini ditujukan untuk drop kolom dengan values 'None'
+def transform_measurement_item(df):
+    pass
 
-    Parameters:
-        df   : nama dataframe yang telah diload ke pyspark
+def transform_measurement_station(df):
+    pass
 
-    Return:
-        df  : dataframe tanpa baris yang value nya 'None'
 
-    Contoh penggunaan:
-        df = filter_none(df)
-        dataframe df tidak mempunyai kolom yang barisnya 'None'
-        
-    """
-    # Get string-type columns
-    string_cols = [c for c, c_type in df.dtypes if c_type == 'string']
-    
-    # Apply filter for each string column
-    for column in string_cols:
-        df = df.filter(col(column) != 'None')
-    
-    return df
 
-def drop_missing_string_date(df):
-    """
-    Fungsi ini ditujukan untuk drop kolom dengan null untuk string NaN untuk date 
-
-    Parameters:
-        df                      : nama dataframe yang telah diload ke pyspark
-
-    Return:
-        df_dropped_string_date  : dataframe tanpa baris yang value nya null & NaN (untuk tipe data string dan date) 
-
-    Contoh penggunaan:
-        df = drop_missing_string_date(df)
-        dataframe df tidak mempunyai kolom yang barisnya null & NaN
-    
-    """
-    # Mengambil kolom yang bertipe data string dan date
-    target_cols = [c for c, c_type in df.dtypes if c_type in ('string', 'date')]
-
-    # Membuang row yang memiliki tipe data string dan date yang null
-    df_dropped_string_date = df.dropna(subset=target_cols)
-
-    return df_dropped_string_date
-
-def convert_yes_no_to_boolean(df, columns):
-    """
-    Fungsi ini ditujukan untuk mengubah tipe data string (Yes/No) ke tipe boolean
-
-    Parameters:
-        df           : nama dataframe yang telah diload ke pyspark
-        columns      : nama kolom yang akan diubah tipe datanya
-
-    Return:
-        df           : dataframe dengan kolom bervalue "Yes" & "No" menjadi True & False
-
-    Contoh penggunaan:
-        df = convert_yes_no_to_boolean(df, ["Is_married"])
-        kolom "Is_married" akan diubah tipe datanya dari Yes ke True dan No ke False
-    """
-    for column in columns:
-        df = df.withColumn(
-            column,
-            when(col(column) == "Yes", True)
-            .when(col(column) == "No", False)
-            .otherwise(None)
-        )
-    return df
-
-def convert_datetime(df, columns, format="yyyy-MM-dd"):
+# Mengubah tipe data ke datetime
+def convert_datetime(df, columns, format="%Y-%m-%d %H:%M"):
     '''
     Fungsi ini ditujukan untuk mengubah tipe data ke tipe datetime
 
     Parameters:
-        df           : DataFrame yang telah diload ke PySpark
+        df           : Nama dataframe
         columns      : List nama kolom yang akan diubah tipe datanya
-        format       : Format datetime (default "yyyy-MM-dd")
+        format       : Format datetime (default "%Y-%m-%d %H:%M")
 
     Return:
         df           : DataFrame dengan kolom yang telah dikonversi ke datetime
 
     Contoh penggunaan:
-        df = convert_datetime(df, ["Purchased Date", "Sold Date"], "yyyy-MM-dd")
+        df = convert_datetime(df, ["Measurement date"], "%Y-%m-%d %H:%M")
     '''
     for column in columns:
-        df = df.withColumn(column, to_timestamp(col(column), format))
+        df[column] = pd.to_datetime(df[column], format=format)
     return df
+
+# measurement = convert_datetime(measurement, ['Measurement date'], "%Y-%m-%d %H:%M")
+# -----------------------------------------------------------------------------------------------
+
+# Drop kolom
+def drop_column(df, column_name):
+    '''
+    Fungsi ini ditujukan untuk membuang kolom yang tidak akan digunakan di data warehouse
+
+    Parameters:
+        df           : Nama DataFrame
+        column_name  : Nama kolom / list kolom yang akan di-drop
+
+    Return:
+        df           : DataFrame tanpa kolom yang telah di-drop
+
+    Contoh penggunaan:
+        df = drop_column(df, "Ticket_id")
+        atau
+        df = drop_column(df, ["Ticket_id", "User_ID"])
+    '''
+    df = df.drop(column_name, axis=1)
+    return df
+
+# measurement_2 = drop_column(measurement, "Instrument status")
+# -----------------------------------------------------------------------------------------------
+
+# Pivot_table
+def pivot_and_rename(df):
+    '''
+    Fungsi ini mempivot tabel berdasarkan 'Measurement date' dan 'Station code' dengan 'Item code' sebagai kolom baru.
+
+    Parameters:
+        df : DataFrame yang akan di pivot
+
+    Returns:
+        df_pivoted : DataFrame yang telah dipivot dan diubah nama kolomnya
+
+    contoh penggunaan:
+        measurement_pivoted = pivot_and_rename(measurement_2)
+    '''
+    # Pivot table
+    df_pivoted = pd.pivot_table(df,
+                                index=['Measurement_Date', 'Station_Code'],
+                                columns='Item_Code',
+                                values='Average_Value')
+
+    # Reset index agar kolom sejajar
+    df_pivoted.columns = [f'{a}' for a in df_pivoted.columns]
+    df_pivoted = df_pivoted.reset_index()
+
+    # Rename Item Code berdasarkan Measurement Item
+    rename_dict = {
+        '1': 'SO2',
+        '3': 'NO2',
+        '5': 'CO',
+        '6': 'O3',
+        '8': 'PM10',
+        '9': 'PM2.5'
+    }
+    df_pivoted = df_pivoted.rename(columns=rename_dict)
+
+    return df_pivoted
+
+#measurement_pivoted = pivot_and_rename(measurement_2)
+# -----------------------------------------------------------------------------------------------
+
+# Create date table
+def generate_dim_date(start, end, freq):
+    '''
+    Fungsi ini membuat waktu berdasarkan rentang tertentu.
+
+    Parameters:
+        start : Tanggal awal ('YYYY-MM-DD').
+        end   : Tanggal akhir ('YYYY-MM-DD').
+        freq  : Frekuensi data ('H' = hourly).
+
+    Returns:
+        dim_date (DataFrame): DataFrame dengan kolom waktu dan atribut waktu terkait.
+
+    contoh penggunaan:
+        dim_date = generate_dim_date(start='2017-01-01', end='2022-01-01', freq='H')
+    '''
+    date_range = pd.date_range(start=start, end=end, freq=freq)
+    dim_date = pd.DataFrame({'timetable': date_range})
+
+    # Menarik informasi dari timteble dengan satuan waktu yang lain
+
+    dim_date['year'] = dim_date['timetable'].dt.year
+    dim_date['month'] = dim_date['timetable'].dt.month
+    dim_date['day'] = dim_date['timetable'].dt.day
+    dim_date['dayofweek'] = dim_date['timetable'].dt.dayofweek
+    dim_date['weekofyear'] = dim_date['timetable'].dt.isocalendar().week
+    dim_date['hour'] = dim_date['timetable'].dt.hour if freq.upper() == 'H' else None
+
+    return dim_date
