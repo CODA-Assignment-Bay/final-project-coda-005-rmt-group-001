@@ -18,7 +18,7 @@ def load_data(station_df, item_df, info_df, date_df):
     engine = create_engine(os.getenv('DATABASE_URL'))
     load_data_to_db(station_df, "Dim_Station",engine)
     load_data_to_db(item_df, "Dim_Item",engine)
-    #load_data_to_db(info_df, "Fact_Info",engine)
+    load_data_to_db(info_df, "Fact_Info",engine)
     load_data_to_db(date_df, "Dim_Date",engine)
 
 
