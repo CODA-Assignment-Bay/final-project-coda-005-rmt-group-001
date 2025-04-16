@@ -3,29 +3,15 @@ import psycopg2
 from sqlalchemy import create_engine
 from dotenv import load_dotenv
 
-def load_data(station_df, item_df, info_df, date_df):
+def load_data(datamart):
     '''
-    Fungsi ini ditujukan untuk melakukan load data ke MongoDB
-
-    Parameter:
-        df: dataframe -  tabel yang berisikan semua data
-    
+    Fungsi ini ditujukan untuk melakukan load data ke NeonDB    
     '''
-
     load_dotenv()
 
-
     engine = create_engine(os.getenv('DATABASE_URL'))
-    load_data_to_db(station_df, "Dim_Station",engine)
-    load_data_to_db(item_df, "Dim_Item",engine)
-    load_data_to_db(info_df, "Fact_Info",engine)
-    load_data_to_db(date_df, "Dim_Date",engine)
+    load_data_to_db(datamart, "Datamart_1",engine)    
 
-
-   
-
-
-    
 
 
 def get_data_from_db(query, engine):
