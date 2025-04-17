@@ -16,7 +16,7 @@ import os
 sys.path.append(os.path.join(os.path.dirname(__file__), "../scripts"))
 
 from extract import get_data_from_db
-from transform import pivot_and_rename, merge_pivot, process_summary, AQI_who
+from transform import pivot_and_rename, merge_pivot, process_summary, AQI_parameter
 from load import load_data
 
 
@@ -69,7 +69,7 @@ with DAG('P2FP_datamart',
         df_measurement_sample_piv.to_csv(temp_csv_path+'df_measurement_sample_piv.csv',index=False) 
 
         df_measurement_sample_piv = pd.read_csv(temp_csv_path+'df_measurement_sample_piv.csv')
-        df_station = pd.read_csv(temp_csv_path+'extract_df_station.csv.csv')
+        df_station = pd.read_csv(temp_csv_path+'extract_df_station.csv')
         df_merged = merge_pivot(df_measurement_sample_piv, df_station)
         df_merged.to_csv(temp_csv_path+'df_merged.csv',index=False)
 
@@ -78,8 +78,8 @@ with DAG('P2FP_datamart',
         df_summary.to_csv(temp_csv_path+'df_summary.csv',index=False)
 
         df_summary = pd.read_csv(temp_csv_path+'df_summary.csv')
-        datamart = AQI_who(df_summary)
-        datamart.to_csv(temp_csv_path+'datamart.csv',index=False)
+        datamart_2 = AQI_parameter(df_summary)
+        datamart_2.to_csv(temp_csv_path+'datamart.csv',index=False)
 
         #measurement_info_df = pd.read_csv(temp_csv_path+'extract_measurement_info.csv')
         #measurement_info_df, dim_date = transform_data(measurement_info_df)

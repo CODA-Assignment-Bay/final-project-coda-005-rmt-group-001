@@ -81,33 +81,36 @@ def process_summary(df):
 
 #df_summary = process_summary(df_merged)
 
-def AQI_who(df):
-    def classify_who_air_quality(row):
-        violations = 0
-        if row['SO2'] > 40:
-            violations += 1
-        if row['NO2'] > 25:
-            violations += 1
-        if row['CO'] > 4:  # CO dalam mg/m³
-            violations += 1
-        if row['O3'] > 100:
-            violations += 1
-        if row['PM10'] > 45:
-            violations += 1
-        if row['PM2.5'] > 15:
-            violations += 1
-
-        if violations == 0:
-            return 'Baik'
-        elif violations <= 2:
-            return 'Sedang'
-        elif violations <= 4:
-            return 'Tidak Sehat'
+def AQI_parameter(df):
+    def calculate_aqi_pm25(pm25):
+        if pm25 <= 30:
+            return round((50 / 30) * pm25, 1)
+        elif pm25 <= 60:
+            return round(((100 - 51) / (60 - 31)) * (pm25 - 31) + 51, 1)
+        elif pm25 <= 90:
+            return round(((200 - 101) / (90 - 61)) * (pm25 - 61) + 101, 1)
+        elif pm25 <= 120:
+            return round(((300 - 201) / (120 - 91)) * (pm25 - 91) + 201, 1)
+        elif pm25 <= 250:
+            return round(((400 - 301) / (250 - 121)) * (pm25 - 121) + 301, 1)
         else:
-            return 'Berbahaya'
+            return round(((500 - 401) / (350 - 251)) * (pm25 - 251) + 401, 1)
 
+    df['AQI_index'] = df['PM2.5'].apply(calculate_aqi_pm25)
 
-    df['WHO_Air_Quality'] = df.apply(classify_who_air_quality, axis=1)
-    return df
+    def categorize_aqi(aqi):
+        if aqi <= 50:
+            return "Good"
+        elif aqi <= 100:
+            return "Satisfactory"
+        elif aqi <= 200:
+            return "Moderate"
+        elif aqi <= 300:
+            return "Poor"
+        elif aqi <= 400:
+            return "Very Poor"
+        else:
+            return "Severe"
 
-#datamart = AQI_who(df_summary)
+    df['AQI_category'] = df['AQI_index'].apply(categorize_aqi)
+    return df 

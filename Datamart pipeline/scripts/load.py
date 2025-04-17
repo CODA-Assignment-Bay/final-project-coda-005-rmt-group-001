@@ -10,7 +10,7 @@ def load_data(datamart):
     load_dotenv()
 
     engine = create_engine(os.getenv('DATABASE_URL'))
-    load_data_to_db(datamart, "Datamart_1",engine)    
+    load_data_to_db(datamart, "Datamart_2",engine)    
 
 
 
