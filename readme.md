@@ -18,12 +18,12 @@ Determining strategies to tackle air pollution in Seoul by understanding the cit
 
 
 ## Data Engineering
-In this process, data from source (https://www.kaggle.com/datasets/bappekim/air-pollution-in-seoul) divided into data models.
+In this process, data from source ("https://www.kaggle.com/datasets/bappekim/air-pollution-in-seoul") divided into data models.
 
-Then ETL process using DAG airflow into neon database (postgresql://neondb_owner:npg_f1uYCZ8nRWzQ@ep-floral-lake-a533zre9-pooler.us-east-2.aws.neon.tech/Air-Pollution-Seoul?sslmode=require).
+Then ETL process using DAG airflow into neon database ("postgresql://neondb_owner:npg_f1uYCZ8nRWzQ@ep-floral-lake-a533zre9-pooler.us-east-2.aws.neon.tech/Air-Pollution-Seoul?sslmode=require").
 
-After that, ETL process again (postgresql://neondb_owner:npg_f1uYCZ8nRWzQ@ep-floral-lake-a533zre9-pooler.us-east-2.aws.neon.tech/Air-Pollution-Seoul?sslmode=require) to become a datamart that will be utilized by Data Analyst Team
+After that, ETL process again ("postgresql://neondb_owner:npg_f1uYCZ8nRWzQ@ep-floral-lake-a533zre9-pooler.us-east-2.aws.neon.tech/Air-Pollution-Seoul?sslmode=require") to become a datamart that will be utilized by Data Analyst Team
 
 
 ## Data Analysis
-In this process, datamart utilized for finding insight https://public.tableau.com/views/FPrev1/Dashboard1?:language=en-US&:sid=&:redirect=auth&:display_count=n&:origin=viz_share_link
+In this process, datamart utilized for finding insight regarding problems statement https://public.tableau.com/views/FPrev1/Dashboard1?:language=en-US&:sid=&:redirect=auth&:display_count=n&:origin=viz_share_link
