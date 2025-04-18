@@ -1,5 +1,5 @@
 
-# Analysis of Seoul Air Pollution in 2017-2019 
+# Analysis of Korean Air Pollution in 2017-2019 
 
 Determining strategies to tackle air pollution in Seoul by understanding the city's air conditions through an analysis of air pollution data from 2017 to 2019, in order to identify the causes of poor air quality in Seoul. The analysis will be conducted over the course of one week.
 
