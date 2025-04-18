@@ -48,11 +48,11 @@ with DAG('P2FP_datamart',
         df_station = get_data_from_db(query)
         df_station.to_csv(temp_csv_path+'extract_df_station.csv',index=False)
 
-        query = '''SELECT * FROM "Dim_Date" LIMIT 200;'''
+        query = '''SELECT * FROM "Dim_Date";'''
         df_date_sample = get_data_from_db(query)
         df_date_sample.to_csv(temp_csv_path+'extract_df_date_sample.csv',index=False)
 
-        query = '''SELECT * FROM "Fact_Info" LIMIT 1000;'''
+        query = '''SELECT * FROM "Fact_Info";'''
         df_measurement_sample = get_data_from_db(query)
         df_measurement_sample.to_csv(temp_csv_path+'extract_df_measurement_sample.csv',index=False)         
         
